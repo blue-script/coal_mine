@@ -18,7 +18,7 @@ const (
 
 type MinerInfo struct {
 	Class              MinerClass
-	HireCost           int
+	HireCost           Coal
 	CoalTotal          Coal
 	CurrentCoalPerMine Coal
 	Working            bool
@@ -37,7 +37,7 @@ type commitFunc func(coal Coal)
 type baseMiner struct {
 	mtx                  sync.RWMutex
 	Class                MinerClass
-	HireCost             int
+	HireCost             Coal
 	Energy               int
 	CoalPerMine          Coal
 	Delay                time.Duration
@@ -80,16 +80,15 @@ func (m *baseMiner) startRun() (chan Coal, bool) {
 func (m *baseMiner) finishRun(ch chan Coal) {
 	m.mtx.Lock()
 	m.Working = false
-	m.mtx.Unlock()
-
 	close(ch)
+	m.mtx.Unlock()
 }
 
 func (m *baseMiner) defaultPreview() (Coal, bool) {
 	m.mtx.RLock()
 	defer m.mtx.RUnlock()
 
-	if m.RemainingEnergy == 0 {
+	if m.RemainingEnergy <= 0 {
 		return 0, false
 	}
 
@@ -163,7 +162,7 @@ func (m *baseMiner) Info() MinerInfo {
 
 type MinerConfig struct {
 	Class                MinerClass
-	HireCost             int
+	HireCost             Coal
 	Energy               int
 	CoalPerMine          Coal
 	Delay                time.Duration

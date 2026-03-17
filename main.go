@@ -1,16 +1,26 @@
 package main
 
 import (
-	"net/http"
+	"context"
+	"fmt"
+	"log"
 
-	"github.com/gin-gonic/gin"
+	"github.com/blue-script/coal_mine/enterprise"
+	"github.com/blue-script/coal_mine/rest"
 )
 
 func main() {
-	r := gin.Default()
-	r.GET("/", func(c *gin.Context) {
-		c.JSON(http.StatusOK, "ok")
-	})
+	ctx, cancel := context.WithCancel(context.Background())
 
-	r.Run(":9091")
+	ent := enterprise.NewEnterprise(ctx, cancel)
+	ent.RunPassiveIncome()
+
+	handlers := rest.NewHTTPHandlers(ent)
+	server := rest.NewHTTPServer(handlers)
+	err := server.Start()
+	if err != nil {
+		log.Println(err)
+	}
+
+	fmt.Println("Finished game")
 }
