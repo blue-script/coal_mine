@@ -145,23 +145,61 @@ func (e *Enterprise) BuyEquipment(name EquipmentName) error {
 	return nil
 }
 
-type FinalStats struct {
+func (e *Enterprise) EquipmentCosts() map[EquipmentName]Coal {
+	e.mtx.RLock()
+	defer e.mtx.RUnlock()
+
+	return e.Equipment.Costs()
+}
+
+func (e *Enterprise) ListEquipment() Equipment {
+	e.mtx.RLock()
+	defer e.mtx.RUnlock()
+
+	return e.Equipment.Info()
+}
+
+type EnterpriseStats struct {
 	Balance   Coal
 	Hired     map[MinerClass]int
+	Miners    []MinerInfo
 	Equipment Equipment
 	Duration  time.Duration
 }
 
-func (e *Enterprise) FinishGame() (FinalStats, error) {
+func (e *Enterprise) Statistic() EnterpriseStats {
+	e.mtx.RLock()
+	defer e.mtx.RUnlock()
+
+	finishedAt := time.Now()
+
+	hiredCopy := make(map[MinerClass]int, len(e.Hired))
+	maps.Copy(hiredCopy, e.Hired)
+
+	miners := make([]MinerInfo, 0, len(e.Miners))
+	for _, val := range e.Miners {
+		miners = append(miners, val.Info())
+	}
+
+	return EnterpriseStats{
+		Balance:   e.Balance,
+		Hired:     hiredCopy,
+		Miners:    miners,
+		Equipment: e.Equipment.Info(),
+		Duration:  finishedAt.Sub(e.StartedAt),
+	}
+}
+
+func (e *Enterprise) FinishGame() (EnterpriseStats, error) {
 	e.mtx.Lock()
 	if !e.Equipment.Completed() {
 		e.mtx.Unlock()
-		return FinalStats{}, ErrGameNotCompleted
+		return EnterpriseStats{}, ErrGameNotCompleted
 	}
 
 	if e.Finished {
 		e.mtx.Unlock()
-		return FinalStats{}, ErrGameAlreadyFinished
+		return EnterpriseStats{}, ErrGameAlreadyFinished
 	}
 	e.Finished = true
 	finishedAt := time.Now()
@@ -176,15 +214,20 @@ func (e *Enterprise) FinishGame() (FinalStats, error) {
 	hiredCopy := make(map[MinerClass]int, len(e.Hired))
 	maps.Copy(hiredCopy, e.Hired)
 
-	return FinalStats{
+	return EnterpriseStats{
 		Balance:   e.Balance,
 		Hired:     hiredCopy,
+		Miners:    []MinerInfo{},
 		Equipment: e.Equipment.Info(),
 		Duration:  finishedAt.Sub(e.StartedAt),
 	}, nil
 }
 
-func (e *Enterprise) MinersInfo(class *MinerClass) []MinerInfo {
+func (e *Enterprise) ListAllMiners() []MinerInfo {
+	return e.ListMiners(nil)
+}
+
+func (e *Enterprise) ListMiners(class *MinerClass) []MinerInfo {
 	e.mtx.RLock()
 	defer e.mtx.RUnlock()
 

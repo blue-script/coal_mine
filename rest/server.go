@@ -15,9 +15,14 @@ type HTTPServer struct {
 func NewHTTPServer(httpHandlers *HTTPHandlers) *HTTPServer {
 	router := gin.Default()
 
+	router.GET("/miners", httpHandlers.ListMiners)
 	router.POST("/miners", httpHandlers.HireMiner)
+	router.GET("/miners/cost/:class", httpHandlers.MinerCost)
+	router.GET("/equipment", httpHandlers.ListEquipment)
+	router.GET("/equipment/prices", httpHandlers.EquipmentPrices)
 	router.POST("/equipment/:name/purchase", httpHandlers.BuyEquipment)
-	router.GET("/miners/cost/:class", httpHandlers.HireCost)
+	router.GET("/enterprise", httpHandlers.EnterpriseStatistic)
+	router.POST("/enterprise/finish", httpHandlers.FinishGame)
 
 	server := &HTTPServer{
 		httpHandlers: httpHandlers,

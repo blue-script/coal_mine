@@ -9,6 +9,7 @@ import (
 
 type HTTPHandlers struct {
 	enterprise *enterprise.Enterprise
+	onFinish   func()
 }
 
 func NewHTTPHandlers(enterprise *enterprise.Enterprise) *HTTPHandlers {
@@ -17,8 +18,12 @@ func NewHTTPHandlers(enterprise *enterprise.Enterprise) *HTTPHandlers {
 	}
 }
 
+func (h *HTTPHandlers) SetOnFinish(fn func()) {
+	h.onFinish = fn
+}
+
 func (h *HTTPHandlers) HireMiner(c *gin.Context) {
-	var req HireMinerDTO
+	var req MinerClassDTO
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -46,7 +51,7 @@ func (h *HTTPHandlers) BuyEquipment(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
-func (h *HTTPHandlers) HireCost(c *gin.Context) {
+func (h *HTTPHandlers) MinerCost(c *gin.Context) {
 	class := enterprise.MinerClass(c.Param("class"))
 
 	info, err := h.enterprise.HireCost(class)
@@ -56,4 +61,66 @@ func (h *HTTPHandlers) HireCost(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, toMinerInfoDTO(info))
+}
+
+func (h *HTTPHandlers) ListMiners(c *gin.Context) {
+	class := c.Query("class")
+
+	var miners []enterprise.MinerInfo
+	if class == "" {
+		miners = h.enterprise.ListAllMiners()
+	} else {
+		minerClass := enterprise.MinerClass(class)
+		miners = h.enterprise.ListMiners(&minerClass)
+	}
+
+	c.JSON(http.StatusOK, toMinerInfoDTOs(miners))
+}
+
+func (h *HTTPHandlers) EquipmentPrices(c *gin.Context) {
+	costs := h.enterprise.EquipmentCosts()
+
+	result := make([]EquipmentPriceDTO, 0, len(costs))
+	for name, cost := range costs {
+		result = append(result, EquipmentPriceDTO{
+			Name: name,
+			Cost: cost,
+		})
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+func (h *HTTPHandlers) ListEquipment(c *gin.Context) {
+	equipment := h.enterprise.ListEquipment()
+
+	c.JSON(http.StatusOK, toEquipmentDTO(equipment))
+}
+
+func (h *HTTPHandlers) EnterpriseStatistic(c *gin.Context) {
+	statistic := h.enterprise.Statistic()
+
+	c.JSON(http.StatusOK, toEnterpriseStatisticDTO(statistic))
+}
+
+func (h *HTTPHandlers) FinishGame(c *gin.Context) {
+	statistic, err := h.enterprise.FinishGame()
+	if err != nil {
+		switch err {
+		case enterprise.ErrGameNotCompleted:
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		case enterprise.ErrGameAlreadyFinished:
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+
+		return
+	}
+
+	c.JSON(http.StatusOK, toEnterpriseStatisticDTO(statistic))
+
+	if h.onFinish != nil {
+		go h.onFinish()
+	}
 }

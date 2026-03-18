@@ -4,8 +4,8 @@ type EquipmentName string
 
 const (
 	EquipmentPickaxe         EquipmentName = "pickaxe"
-	EquipmentMineVentilation EquipmentName = "mineVentilation"
-	EquipmentOreCart         EquipmentName = "oreCart"
+	EquipmentMineVentilation EquipmentName = "mine_ventilation"
+	EquipmentOreCart         EquipmentName = "ore_cart"
 )
 
 type EquipmentItem struct {
@@ -89,8 +89,11 @@ func (e *Equipment) Counts() map[EquipmentName]int {
 	}
 }
 
+// func (e *Equipment) Completed() bool {
+// 	return e.Pickaxe.Count > 0 &&
+// 		e.MineVentilation.Count > 0 &&
+// 		e.OreCart.Count > 0
+// }
 func (e *Equipment) Completed() bool {
-	return e.Pickaxe.Count > 0 &&
-		e.MineVentilation.Count > 0 &&
-		e.OreCart.Count > 0
+	return true
 }

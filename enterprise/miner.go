@@ -22,6 +22,7 @@ type MinerInfo struct {
 	CoalTotal          Coal
 	CurrentCoalPerMine Coal
 	Working            bool
+	Energy             int
 	RemainingEnergy    int
 	Delay              time.Duration
 }
@@ -155,6 +156,7 @@ func (m *baseMiner) Info() MinerInfo {
 		CoalTotal:          m.CoalTotal,
 		CurrentCoalPerMine: m.CurrentCoalPerMine,
 		Working:            m.Working,
+		Energy:             m.Energy,
 		RemainingEnergy:    m.RemainingEnergy,
 		Delay:              m.Delay,
 	}
@@ -189,21 +191,21 @@ func newBaseMiner(cfg MinerConfig) *baseMiner {
 
 func NewSmallMiner() *SmallMiner {
 	return &SmallMiner{newBaseMiner(MinerConfig{
-		Class:                MinerClassSmall,
-		HireCost:             5,
-		Energy:               30,
-		CoalPerMine:          1,
-		Delay:                3 * time.Second,
+		Class:       MinerClassSmall,
+		HireCost:    5,
+		Energy:      30,
+		CoalPerMine: 1,
+		Delay:       3 * time.Second,
 	})}
 }
 
 func NewNormalMiner() *NormalMiner {
 	return &NormalMiner{newBaseMiner(MinerConfig{
-		Class:                MinerClassNormal,
-		HireCost:             50,
-		Energy:               45,
-		CoalPerMine:          3,
-		Delay:                2 * time.Second,
+		Class:       MinerClassNormal,
+		HireCost:    50,
+		Energy:      45,
+		CoalPerMine: 3,
+		Delay:       2 * time.Second,
 	})}
 }
 
